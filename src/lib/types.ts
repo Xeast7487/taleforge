@@ -1,6 +1,8 @@
 export type GameStatus = 'waiting' | 'active' | 'paused' | 'ended'
 export type MessageType = 'chat' | 'action' | 'narration' | 'dm' | 'system' | 'whisper' | 'roll'
 export type DiceType = 'd4' | 'd6' | 'd8' | 'd10' | 'd12' | 'd20' | 'd100'
+export type ItemType = 'weapon' | 'armor' | 'accessory' | 'consumable' | 'misc'
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
 export interface TfUser {
   id: string
@@ -84,6 +86,71 @@ export interface TfDiceRoll {
   purpose: string | null
   created_at: string
   user?: TfUser
+}
+
+export interface TfItem {
+  id: string
+  name: string
+  description: string | null
+  type: ItemType
+  rarity: ItemRarity
+  bonuses: Record<string, number>
+  icon: string
+  created_at: string
+}
+
+export interface TfCharacterItem {
+  id: string
+  character_id: string
+  item_id: string
+  equipped: boolean
+  quantity: number
+  obtained_from: string | null
+  obtained_at: string
+  item?: TfItem
+}
+
+// XP thresholds per level (D&D 5e)
+export const XP_THRESHOLDS = [0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
+
+export function calcLevel(xp: number): number {
+  for (let i = 20; i >= 1; i--) {
+    if (xp >= XP_THRESHOLDS[i]) return i
+  }
+  return 1
+}
+
+export function xpForNextLevel(level: number): number {
+  return XP_THRESHOLDS[Math.min(level + 1, 20)]
+}
+
+export const RARITY_COLORS: Record<ItemRarity, string> = {
+  common: '#9ca3af',
+  uncommon: '#22c55e',
+  rare: '#3b82f6',
+  epic: '#8b5cf6',
+  legendary: '#f59e0b',
+}
+
+export const RARITY_LABELS: Record<ItemRarity, string> = {
+  common: 'Commun',
+  uncommon: 'Peu commun',
+  rare: 'Rare',
+  epic: 'Épique',
+  legendary: 'Légendaire',
+}
+
+export const BONUS_LABELS: Record<string, string> = {
+  strength: 'FOR',
+  dexterity: 'DEX',
+  constitution: 'CON',
+  intelligence: 'INT',
+  wisdom: 'SAG',
+  charisma: 'CHA',
+  armor_class: 'CA',
+  hp_max: 'PV max',
+  hp_current: 'PV',
+  initiative: 'Init',
 }
 
 export const RACES = ['Humain', 'Elfe', 'Nain', 'Halfelin', 'Gnome', 'Semi-Elfe', 'Semi-Orque', 'Tieffelin', 'Draconide'] as const

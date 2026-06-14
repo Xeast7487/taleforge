@@ -15,6 +15,13 @@ export default async function DashboardPage() {
     profile = { id: user.id, username, avatar_url: null, created_at: new Date().toISOString() }
   }
 
+  // Get user's characters with their equipped items
+  const { data: characters } = await supabase
+    .from('tf_characters')
+    .select('*, items:tf_character_items(*, item:tf_items(*))')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
   // Get games list
   const { data: games } = await supabase
     .from('tf_games')
@@ -35,5 +42,5 @@ export default async function DashboardPage() {
 
   const gamesWithCount = (games || []).map(g => ({ ...g, player_count: countMap[g.id] || 0 }))
 
-  return <DashboardClient user={profile} games={gamesWithCount} />
+  return <DashboardClient user={profile} games={gamesWithCount} characters={characters || []} />
 }

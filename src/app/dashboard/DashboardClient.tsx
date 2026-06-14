@@ -4,14 +4,112 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import type { TfUser, TfGame } from '@/lib/types'
+import type { TfUser, TfGame, TfCharacter, TfCharacterItem, TfItem } from '@/lib/types'
+import { calcLevel, xpForNextLevel, RARITY_COLORS, RARITY_LABELS, BONUS_LABELS } from '@/lib/types'
+
+type CharacterWithItems = TfCharacter & {
+  items: (TfCharacterItem & { item: TfItem })[]
+}
 
 interface Props {
   user: TfUser
   games: (TfGame & { player_count: number })[]
+  characters: CharacterWithItems[]
 }
 
-export default function DashboardClient({ user, games }: Props) {
+const CLASS_ICONS: Record<string, string> = {
+  Barbare:'💪',Barde:'🎵',Clerc:'✝️',Druide:'🌿',Guerrier:'⚔️',Moine:'👊',
+  Paladin:'⚜️',Rôdeur:'🏹',Roublard:'🗡️',Ensorceleur:'✨',Occultiste:'👁️',Magicien:'🧙',
+}
+
+function BonusTag({ stat, val }: { stat: string; val: number }) {
+  return (
+    <span style={{ fontSize: '0.7rem', background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.4)', borderRadius: '4px', padding: '0.1rem 0.35rem', color: '#a78bfa' }}>
+      +{val} {BONUS_LABELS[stat] || stat}
+    </span>
+  )
+}
+
+function CharacterCard({ char }: { char: CharacterWithItems }) {
+  const equipped = char.items.filter(i => i.equipped)
+  const hpPct = Math.max(0, Math.min(100, (char.hp_current / char.hp_max) * 100))
+  const currentXp = char.experience
+  const nextLevelXp = xpForNextLevel(char.level)
+  const prevLevelXp = xpForNextLevel(char.level - 1) || 0
+  const xpPct = nextLevelXp > prevLevelXp
+    ? Math.min(100, ((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100)
+    : 100
+  const icon = CLASS_ICONS[char.class] || '🧙'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card"
+      style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ fontSize: '2rem', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface2)', borderRadius: '10px' }}>
+          {icon}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 'bold', color: 'var(--gold)', fontSize: '1.05rem' }}>{char.name}</div>
+          <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>{char.race} · {char.class} · Niv. {char.level}</div>
+        </div>
+        {!char.is_alive && <span style={{ fontSize: '0.75rem', color: 'var(--red)', border: '1px solid var(--red)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>☠️ Mort</span>}
+      </div>
+
+      {/* HP bar */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.25rem' }}>
+          <span>❤️ PV</span>
+          <span>{char.hp_current}/{char.hp_max}</span>
+        </div>
+        <div style={{ height: '6px', background: 'var(--surface2)', borderRadius: '3px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${hpPct}%`, background: hpPct > 60 ? 'var(--green)' : hpPct > 30 ? 'var(--gold)' : 'var(--red)', borderRadius: '3px', transition: 'width 0.3s' }} />
+        </div>
+      </div>
+
+      {/* XP bar */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.25rem' }}>
+          <span>⭐ XP</span>
+          <span>{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()}</span>
+        </div>
+        <div style={{ height: '6px', background: 'var(--surface2)', borderRadius: '3px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${xpPct}%`, background: 'linear-gradient(90deg,#f59e0b,#fbbf24)', borderRadius: '3px', transition: 'width 0.3s' }} />
+        </div>
+      </div>
+
+      {/* Equipped items */}
+      {equipped.length > 0 && (
+        <div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.4rem' }}>Items équipés</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            {equipped.map(ci => (
+              <div key={ci.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem' }}>
+                <span>{ci.item.icon}</span>
+                <span style={{ color: RARITY_COLORS[ci.item.rarity], fontWeight: 500 }}>{ci.item.name}</span>
+                <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                  {Object.entries(ci.item.bonuses).map(([stat, val]) => (
+                    <BonusTag key={stat} stat={stat} val={val as number} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {equipped.length === 0 && (
+        <div style={{ fontSize: '0.8rem', color: 'var(--muted)', fontStyle: 'italic' }}>Aucun item équipé</div>
+      )}
+    </motion.div>
+  )
+}
+
+export default function DashboardClient({ user, games, characters }: Props) {
   const [creating, setCreating] = useState(false)
   const [newGameName, setNewGameName] = useState('')
   const [newGameDesc, setNewGameDesc] = useState('')
@@ -43,9 +141,7 @@ export default function DashboardClient({ user, games }: Props) {
       return
     }
 
-    // Join as host
     await supabase.from('tf_game_players').insert({ game_id: game.id, user_id: user.id })
-
     router.push(`/game/${game.id}`)
   }
 
@@ -78,7 +174,7 @@ export default function DashboardClient({ user, games }: Props) {
         </div>
       </nav>
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
+      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem 1rem' }}>
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '1.75rem', color: 'var(--gold)', fontWeight: 'bold', marginBottom: '0.25rem' }}>
@@ -135,9 +231,37 @@ export default function DashboardClient({ user, games }: Props) {
           </motion.div>
         )}
 
+        {/* Characters section */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h2 style={{ color: 'var(--text)', fontWeight: 'bold', fontSize: '1.1rem' }}>
+              🧙 Mes personnages ({characters.length})
+            </h2>
+            <Link href="/character/new" style={{ color: 'var(--accent)', fontSize: '0.85rem' }}>
+              + Nouveau
+            </Link>
+          </div>
+
+          {characters.length === 0 ? (
+            <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🧙</div>
+              <p style={{ marginBottom: '1rem' }}>Vous n&apos;avez pas encore de personnage.</p>
+              <Link href="/character/new" className="btn btn-gold" style={{ display: 'inline-flex' }}>
+                Créer mon premier personnage
+              </Link>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+              {characters.map(char => (
+                <CharacterCard key={char.id} char={char} />
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Games list */}
         <h2 style={{ color: 'var(--text)', fontWeight: 'bold', marginBottom: '1rem', fontSize: '1.1rem' }}>
-          Parties disponibles ({games.length})
+          ⚔️ Parties disponibles ({games.length})
         </h2>
 
         {games.length === 0 ? (
