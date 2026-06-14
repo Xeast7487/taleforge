@@ -114,6 +114,7 @@ export default function DashboardClient({ user, games, characters }: Props) {
   const [newGameName, setNewGameName] = useState('')
   const [newGameDesc, setNewGameDesc] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [dmType, setDmType] = useState<'ai' | 'human'>('ai')
   const router = useRouter()
   const supabase = createClient()
 
@@ -133,6 +134,7 @@ export default function DashboardClient({ user, games, characters }: Props) {
       description: newGameDesc.trim() || null,
       host_id: user.id,
       status: 'waiting',
+      dm_type: dmType,
     }).select().single()
 
     if (error || !game) {
@@ -219,6 +221,11 @@ export default function DashboardClient({ user, games, characters }: Props) {
                 rows={2}
                 style={{ resize: 'vertical', minHeight: '60px' }}
               />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Maître du Jeu :</span>
+                <button type="button" onClick={() => setDmType('ai')} className="btn" style={{ padding: '0.3rem 0.75rem', fontSize: '0.82rem', background: dmType === 'ai' ? 'var(--surface2)' : 'transparent', border: `1px solid ${dmType === 'ai' ? 'var(--accent)' : 'var(--border)'}`, color: dmType === 'ai' ? 'var(--accent)' : 'var(--muted)' }}>🤖 Claude (IA)</button>
+                <button type="button" onClick={() => setDmType('human')} className="btn" style={{ padding: '0.3rem 0.75rem', fontSize: '0.82rem', background: dmType === 'human' ? 'var(--surface2)' : 'transparent', border: `1px solid ${dmType === 'human' ? '#a78bfa' : 'var(--border)'}`, color: dmType === 'human' ? '#a78bfa' : 'var(--muted)' }}>🎭 Humain</button>
+              </div>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button type="submit" className="btn btn-gold" disabled={creating}>
                   {creating ? '⏳ Création...' : '⚔️ Créer la partie'}
@@ -288,6 +295,7 @@ export default function DashboardClient({ user, games, characters }: Props) {
                     <span style={{ fontSize: '0.8rem', color: statusColor[game.status] || 'var(--muted)', background: 'rgba(0,0,0,0.3)', padding: '0.15rem 0.5rem', borderRadius: '999px', border: `1px solid ${statusColor[game.status] || 'var(--muted)'}` }}>
                       {statusLabel[game.status] || game.status}
                     </span>
+                    {game.dm_type === 'human' && <span style={{ fontSize: '0.75rem', color: '#a78bfa', border: '1px solid #a78bfa', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>🎭 MJ Humain</span>}
                   </div>
                   {game.description && <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{game.description}</p>}
                   <div style={{ color: 'var(--muted)', fontSize: '0.8rem', display: 'flex', gap: '1rem' }}>

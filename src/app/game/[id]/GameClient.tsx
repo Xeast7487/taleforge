@@ -248,6 +248,12 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
         } else {
           setMessages(p=>[...p,m])
         }
+        if(m.type==='system'&&m.metadata?.dice_request){
+          const req=m.metadata.dice_request as{dice:string,purpose:string,target_user_id:string|null}
+          if(!req.target_user_id||req.target_user_id===user.id){
+            setPendingDice({purpose:req.purpose,modifier:0})
+          }
+        }
       })
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'tf_games',filter:`id=eq.${game.id}`},payload=>{
         setGameStatus((payload.new as TfGame).status)

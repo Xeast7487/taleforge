@@ -21,6 +21,7 @@ export interface TfGame {
   current_scene: string
   map_state: { tiles: unknown[]; tokens: unknown[]; fog: boolean }
   ai_model: string
+  dm_type: 'ai' | 'human'
   created_at: string
   updated_at: string
   host?: TfUser
