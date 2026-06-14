@@ -20,7 +20,7 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { username } },
@@ -30,19 +30,6 @@ export default function RegisterPage() {
       setError(signUpError.message)
       setLoading(false)
       return
-    }
-
-    if (data.user) {
-      // Create profile in tf_users
-      const { error: profileError } = await supabase.from('tf_users').upsert({
-        id: data.user.id,
-        username,
-      })
-      if (profileError && !profileError.message.includes('duplicate')) {
-        setError(profileError.message)
-        setLoading(false)
-        return
-      }
     }
 
     router.push('/dashboard')
