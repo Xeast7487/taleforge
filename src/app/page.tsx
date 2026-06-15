@@ -243,7 +243,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Combien de joueurs peuvent participer ?',
-    a: "Jusqu'à 6 aventuriers peuvent rejoindre la même partie en temps réel. Le DM IA comme le DM humain s'adaptent à la taille du groupe, de la session solo à la table de six.",
+    a: "Jusqu'à 10 aventuriers peuvent rejoindre la même partie en temps réel. Le DM IA comme le DM humain s'adaptent à la taille du groupe, de la session solo à la grande table.",
   },
   {
     q: 'Faut-il connaître D&D pour jouer ?',
@@ -423,7 +423,7 @@ export default function Home() {
                 D&D 5e multijoueur en ligne — guidé par{' '}
                 <strong style={{ color: 'var(--accent)' }}>Aelindra (IA)</strong> ou par un vrai{' '}
                 <strong style={{ color: 'var(--gold)' }}>Maître du Jeu humain</strong>.
-                Jusqu'à 6 aventuriers, zéro installation.
+                Jusqu'à 10 aventuriers, zéro installation.
               </motion.p>
 
               <motion.div
@@ -454,7 +454,7 @@ export default function Home() {
                   { icon: '🆓', label: 'Gratuit' },
                   { icon: '⚡', label: 'Temps réel' },
                   { icon: '🤖', label: 'Aelindra IA' },
-                  { icon: '👥', label: "Jusqu'à 6 joueurs" },
+                  { icon: '👥', label: "Jusqu'à 10 joueurs" },
                 ].map(b => (
                   <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--muted)', fontSize: '0.82rem' }}>
                     <span>{b.icon}</span>
@@ -779,7 +779,7 @@ export default function Home() {
             </FadeIn>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
               {[
-                { icon: '⚔️', title: 'Multijoueur temps réel', desc: "Jusqu'à 6 aventuriers synchronisés à la milliseconde. Chat, actions, narrations — tout arrive en direct." },
+                { icon: '⚔️', title: 'Multijoueur temps réel', desc: "Jusqu'à 10 aventuriers synchronisés à la milliseconde. Chat, actions, narrations — tout arrive en direct." },
                 { icon: '🎲', title: 'Dés animés d4–d20', desc: 'Tous les dés D&D avec animations fluides. Demandés par le MJ ou lancés librement — les résultats sont visibles par tous.' },
                 { icon: '🧝', title: 'Création de personnage', desc: '9 races, 12 classes, stats D&D 5e complètes (FOR, DEX, CON, INT, SAG, CHA). Votre héros en quelques clics.' },
                 { icon: '🏆', title: 'XP & objets magiques', desc: "Gagnez de l'expérience, montez en niveau. Récupérez des équipements communs, épiques ou légendaires." },
@@ -866,7 +866,7 @@ export default function Home() {
                   num: '03', icon: '🎮',
                   title: 'Lancez ou rejoignez une partie',
                   desc: "Créez une salle (DM IA ou DM humain), partagez le code, et l'aventure commence. Vos amis vous rejoignent en un clic.",
-                  detail: "Jusqu'à 6 joueurs · Temps réel",
+                  detail: "Jusqu'à 10 joueurs · Temps réel",
                 },
               ].map((step, i) => (
                 <FadeIn key={step.num} delay={i * 0.14}>
@@ -913,7 +913,7 @@ export default function Home() {
               gap: '2rem', textAlign: 'center',
             }}>
               {[
-                { value: '6', label: 'Aventuriers max', icon: '⚔️' },
+                { value: '10', label: 'Aventuriers max', icon: '⚔️' },
                 { value: '2', label: 'Modes de jeu', icon: '🎮' },
                 { value: '12', label: 'Classes jouables', icon: '🧙' },
                 { value: '9', label: 'Races disponibles', icon: '🧝' },
