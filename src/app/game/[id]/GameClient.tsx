@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { TfGame, TfUser, TfCharacter, TfMessage, TfItem, GameStatus } from '@/lib/types'
 import { calcLevel, xpForNextLevel, RARITY_COLORS, BONUS_LABELS } from '@/lib/types'
+import CharacterSheetModal from './CharacterSheetModal'
 
 interface Props {
   game: TfGame & { host?: { username: string } }
@@ -231,6 +232,7 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
   const [thinking,setThinking]=useState(false)
   const [statusLoading,setStatusLoading]=useState(false)
   const [showRewards,setShowRewards]=useState(false)
+  const [showSheet,setShowSheet]=useState(false)
   const [dmHistory,setDmHistory]=useState<{role:'user'|'assistant';content:string}[]>([])
   const [pendingDice,setPendingDice]=useState<{purpose?:string;modifier?:number}|null>(null)
   const chatEndRef=useRef<HTMLDivElement>(null)
@@ -344,7 +346,7 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
         <div style={{flex:1}}/>
         {character&&(
           <div style={{display:'flex',alignItems:'center',gap:'0.75rem',fontSize:'0.85rem'}}>
-            <span style={{color:'var(--muted)'}}>🧙 {character.name}</span>
+            <button onClick={()=>setShowSheet(true)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',textDecoration:'underline dotted',padding:0,fontSize:'0.85rem'}}>🧙 {character.name} 📋</button>
             <span style={{color:'var(--red)',fontSize:'0.8rem'}}>❤️ {character.hp_current}/{character.hp_max}</span>
             <div className="hp-bar" style={{width:'60px'}}><div className="hp-fill" style={{width:`${hpPct}%`,background:hpPct>60?'var(--green)':hpPct>30?'var(--gold)':'var(--red)'}}/></div>
           </div>
@@ -403,6 +405,8 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
           ✅ Cette partie est terminée. <Link href="/dashboard" style={{color:'var(--accent)'}}>Retourner au lobby</Link>
         </div>
       )}
+
+      {showSheet&&character&&<CharacterSheetModal character={character} onClose={()=>setShowSheet(false)}/>}
 
       <AnimatePresence>
         {showRewards&&(

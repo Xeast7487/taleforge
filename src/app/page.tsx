@@ -15,7 +15,7 @@ const STARS = Array.from({ length: 90 }, (_, i) => ({
 
 const PREVIEW_MESSAGES: Array<{
   type: string
-  text: string
+  text?: string
   delay: number
   author?: string
   value?: number
@@ -23,7 +23,7 @@ const PREVIEW_MESSAGES: Array<{
   { type: 'narration', text: "La porte grince. Une taverne enfumée s'ouvre devant vous — remplie de murmures et de bougies vacillantes.", delay: 400 },
   { type: 'action', author: 'Thorin', text: "J'inspecte la salle à la recherche de signes de danger.", delay: 1600 },
   { type: 'roll-request', text: '🎲 Claude demande un jet de Perception — d20 + SAG', delay: 2900 },
-  { type: 'roll-result', author: 'Thorin', value: 19, delay: 3800 },
+  { type: 'roll-result', author: 'Thorin', value: 19, text: '🎲 19', delay: 3800 },
   { type: 'dm', text: "Excellente perception ! Tu remarques un homme encapuchonné qui observe la porte d'entrée... et qui semble te reconnaître.", delay: 5000 },
   { type: 'narration', text: "L'inconnu pose lentement sa main sur le pommeau de son épée...", delay: 6600 },
 ]
