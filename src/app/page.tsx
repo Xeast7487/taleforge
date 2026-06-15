@@ -22,7 +22,7 @@ const PREVIEW_MESSAGES: Array<{
 }> = [
   { type: 'narration', text: "La porte grince. Une taverne enfumée s'ouvre devant vous — remplie de murmures et de bougies vacillantes.", delay: 400 },
   { type: 'action', author: 'Thorin', text: "J'inspecte la salle à la recherche de signes de danger.", delay: 1600 },
-  { type: 'roll-request', text: '🎲 Claude demande un jet de Perception — d20 + SAG', delay: 2900 },
+  { type: 'roll-request', text: '🎲 Aelindra demande un jet de Perception — d20 + SAG', delay: 2900 },
   { type: 'roll-result', author: 'Thorin', value: 19, text: '🎲 19', delay: 3800 },
   { type: 'dm', text: "Excellente perception ! Tu remarques un homme encapuchonné qui observe la porte d'entrée... et qui semble te reconnaître.", delay: 5000 },
   { type: 'narration', text: "L'inconnu pose lentement sa main sur le pommeau de son épée...", delay: 6600 },
@@ -108,7 +108,7 @@ function GamePreviewWindow() {
                 fontSize: '0.74rem',
                 lineHeight: 1.55,
               }}>
-                <div style={{ fontWeight: 700, fontSize: '0.63rem', color: 'var(--accent)', marginBottom: '0.2rem' }}>🤖 Claude · MJ</div>
+                <div style={{ fontWeight: 700, fontSize: '0.63rem', color: 'var(--accent)', marginBottom: '0.2rem' }}>🤖 Aelindra · MJ</div>
                 <span style={{ color: '#c4b5fd' }}>{msg.text}</span>
               </div>
             )}
@@ -157,7 +157,7 @@ function GamePreviewWindow() {
             transition={{ duration: 1.3, repeat: Infinity }}
             style={{ color: 'var(--muted)', fontSize: '0.67rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
           >
-            <span style={{ color: 'var(--accent)' }}>●</span> Claude rédige...
+            <span style={{ color: 'var(--accent)' }}>●</span> Aelindra rédige...
           </motion.div>
         )}
       </div>
@@ -239,7 +239,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Le DM IA comprend vraiment les règles D&D 5e ?",
-    a: "Claude connaît les règles D&D 5e et les applique en jeu : jets de dés contextuels, modificateurs de statistiques, avantage/désavantage. Il maintient aussi la cohérence narrative tout au long de l'aventure.",
+    a: "Aelindra connaît les règles D&D 5e et les applique en jeu : jets de dés contextuels, modificateurs de statistiques, avantage/désavantage. Elle maintient aussi la cohérence narrative tout au long de l'aventure.",
   },
   {
     q: 'Combien de joueurs peuvent participer ?',
@@ -421,7 +421,7 @@ export default function Home() {
                 }}
               >
                 D&D 5e multijoueur en ligne — guidé par{' '}
-                <strong style={{ color: 'var(--accent)' }}>Claude (IA)</strong> ou par un vrai{' '}
+                <strong style={{ color: 'var(--accent)' }}>Aelindra (IA)</strong> ou par un vrai{' '}
                 <strong style={{ color: 'var(--gold)' }}>Maître du Jeu humain</strong>.
                 Jusqu'à 6 aventuriers, zéro installation.
               </motion.p>
@@ -453,7 +453,7 @@ export default function Home() {
                 {[
                   { icon: '🆓', label: 'Gratuit' },
                   { icon: '⚡', label: 'Temps réel' },
-                  { icon: '🤖', label: 'Claude IA' },
+                  { icon: '🤖', label: 'Aelindra IA' },
                   { icon: '👥', label: "Jusqu'à 6 joueurs" },
                 ].map(b => (
                   <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--muted)', fontSize: '0.82rem' }}>
@@ -506,8 +506,7 @@ export default function Home() {
             alignItems: 'center',
           }}>
             {[
-              { icon: '🤖', label: 'Propulsé par Claude · Anthropic' },
-              { icon: '⚡', label: 'Supabase Realtime' },
+              { icon: '🤖', label: 'Guidé par Aelindra · IA' },
               { icon: '🐉', label: 'Règles D&D 5e' },
               { icon: '🔒', label: 'Compte sécurisé' },
               { icon: '🆓', label: '100% gratuit' },
@@ -574,12 +573,12 @@ export default function Home() {
                           padding: '0.2rem 0.6rem',
                           borderRadius: '4px',
                           marginBottom: '0.5rem',
-                        }}>Claude · IA</span>
+                        }}>Aelindra · IA</span>
                         <h3 style={{ color: 'var(--text)', fontSize: '1.65rem', fontWeight: 700 }}>DM Artificiel</h3>
                       </div>
                     </div>
                     <p style={{ color: 'var(--muted)', lineHeight: 1.7, fontSize: '0.9rem' }}>
-                      Claude, le modèle d'Anthropic, incarne un Maître du Jeu expert. Il génère des histoires immersives, applique les règles D&D 5e et s'adapte à chaque décision de vos personnages — instantanément.
+                      Aelindra, l'oracle des récits, incarne un Maître du Jeu expert. Elle génère des histoires immersives, applique les règles D&D 5e et s'adapte à chaque décision de vos personnages — instantanément.
                     </p>
                   </div>
 
@@ -610,7 +609,7 @@ export default function Home() {
                       fontSize: '0.72rem',
                       textAlign: 'center',
                     }}>
-                      🎲 Claude demande : Persuasion ou Initiative — à vous de choisir
+                      🎲 Aelindra demande : Persuasion ou Initiative — à vous de choisir
                     </div>
                   </div>
 
@@ -780,7 +779,7 @@ export default function Home() {
             </FadeIn>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
               {[
-                { icon: '⚔️', title: 'Multijoueur temps réel', desc: "Jusqu'à 6 aventuriers synchronisés à la milliseconde via Supabase Realtime. Chat, actions, narrations — tout arrive en direct." },
+                { icon: '⚔️', title: 'Multijoueur temps réel', desc: "Jusqu'à 6 aventuriers synchronisés à la milliseconde. Chat, actions, narrations — tout arrive en direct." },
                 { icon: '🎲', title: 'Dés animés d4–d20', desc: 'Tous les dés D&D avec animations fluides. Demandés par le MJ ou lancés librement — les résultats sont visibles par tous.' },
                 { icon: '🧝', title: 'Création de personnage', desc: '9 races, 12 classes, stats D&D 5e complètes (FOR, DEX, CON, INT, SAG, CHA). Votre héros en quelques clics.' },
                 { icon: '🏆', title: 'XP & objets magiques', desc: "Gagnez de l'expérience, montez en niveau. Récupérez des équipements communs, épiques ou légendaires." },
@@ -1012,7 +1011,7 @@ export default function Home() {
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <Link href="/auth/register" style={{ color: 'var(--muted)', textDecoration: 'none' }}>S'inscrire</Link>
               <Link href="/auth/login" style={{ color: 'var(--muted)', textDecoration: 'none' }}>Se connecter</Link>
-              <span>Propulsé par <strong style={{ color: 'var(--accent)' }}>Claude</strong> &amp; Supabase</span>
+              <span>Guidé par <strong style={{ color: 'var(--accent)' }}>Aelindra</strong></span>
             </div>
           </div>
         </footer>
