@@ -236,9 +236,14 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
   const [dmHistory,setDmHistory]=useState<{role:'user'|'assistant';content:string}[]>([])
   const [pendingDice,setPendingDice]=useState<{purpose?:string;modifier?:number}|null>(null)
   const chatEndRef=useRef<HTMLDivElement>(null)
+  const voiceEnabledRef=useRef(false)
+  const recognitionRef=useRef<unknown>(null)
+  const [voiceEnabled,setVoiceEnabled]=useState(false)
+  const [isListening,setIsListening]=useState(false)
   const supabase=createClient()
 
   useEffect(()=>{chatEndRef.current?.scrollIntoView({behavior:'smooth'})},[messages])
+  useEffect(()=>{voiceEnabledRef.current=voiceEnabled},[voiceEnabled])
 
   useEffect(()=>{
     const ch=supabase.channel(`game-${game.id}`)
@@ -249,6 +254,7 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
           setMessages(p=>[...p,{...m,user:(u as TfUser)??undefined}])
         } else {
           setMessages(p=>[...p,m])
+          if(m.type==='dm'&&voiceEnabledRef.current)speakDM(m.content)
         }
         if(m.type==='system'&&m.metadata?.dice_request){
           const req=m.metadata.dice_request as{dice:string,purpose:string,target_user_id:string|null}
@@ -275,6 +281,42 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
       }
     }catch{}finally{setThinking(false)}
   },[game.id,game.current_scene,character,dmHistory])
+
+  function speakDM(text:string){
+    if(!('speechSynthesis' in window))return
+    window.speechSynthesis.cancel()
+    const utt=new SpeechSynthesisUtterance(text)
+    utt.lang='fr-FR'
+    utt.rate=0.95
+    const voices=window.speechSynthesis.getVoices()
+    const frVoice=voices.find(v=>v.lang.startsWith('fr'))
+    if(frVoice)utt.voice=frVoice
+    window.speechSynthesis.speak(utt)
+  }
+
+  function toggleListening(){
+    if(isListening){
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(recognitionRef.current as any)?.stop()
+      setIsListening(false)
+      return
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition
+    if(!SR)return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r=new SR() as any
+    r.lang='fr-FR'
+    r.continuous=false
+    r.interimResults=false
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    r.onresult=(e:any)=>{setInput(e.results[0][0].transcript);setIsListening(false)}
+    r.onerror=()=>setIsListening(false)
+    r.onend=()=>setIsListening(false)
+    recognitionRef.current=r
+    r.start()
+    setIsListening(true)
+  }
 
   async function sendMessage(e:React.FormEvent){
     e.preventDefault();if(!input.trim()||thinking)return
@@ -384,6 +426,7 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
           <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.5rem'}}>
             <button onClick={()=>setMsgType('chat')} className="btn" style={{padding:'0.3rem 0.75rem',fontSize:'0.8rem',background:msgType==='chat'?'var(--surface2)':'transparent',border:`1px solid ${msgType==='chat'?'var(--accent)':'var(--border)'}`,color:msgType==='chat'?'var(--accent)':'var(--muted)'}}>💬 Chat</button>
             <button onClick={()=>setMsgType('action')} className="btn" style={{padding:'0.3rem 0.75rem',fontSize:'0.8rem',background:msgType==='action'?'var(--surface2)':'transparent',border:`1px solid ${msgType==='action'?'var(--green)':'var(--border)'}`,color:msgType==='action'?'var(--green)':'var(--muted)'}}>⚔️ Action</button>
+            <button onClick={()=>setVoiceEnabled(v=>!v)} className="btn" title={voiceEnabled?'Désactiver la voix du MJ':'Activer la voix du MJ'} style={{padding:'0.3rem 0.6rem',fontSize:'0.9rem',background:voiceEnabled?'rgba(124,58,237,0.15)':'transparent',border:`1px solid ${voiceEnabled?'var(--accent)':'var(--border)'}`,color:voiceEnabled?'var(--accent)':'var(--muted)'}}>{voiceEnabled?'🔊':'🔇'}</button>
             <div style={{flex:1}}/>
             <span style={{color:'var(--muted)',fontSize:'0.75rem'}}>Dés libres:</span>
             {DICE.map(d=><DiceButton key={d.type} {...d} onRoll={async(type,result)=>{
@@ -394,6 +437,7 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
           </div>
           <form onSubmit={sendMessage} style={{display:'flex',gap:'0.5rem'}}>
             <input className="input" value={input} onChange={e=>setInput(e.target.value)} placeholder={msgType==='action'?'⚔️ Décrivez votre action... (déclenche le MJ)':'💬 Chat libre...'} disabled={thinking||gameStatus==='paused'} style={{borderColor:msgType==='action'?'rgba(34,197,94,0.5)':undefined}}/>
+            <button type="button" onClick={toggleListening} className="btn" title={isListening?'Arrêter la dictée':'Dicter une action'} style={{padding:'0.3rem 0.75rem',fontSize:'1rem',flexShrink:0,background:isListening?'rgba(239,68,68,0.2)':'transparent',border:`1px solid ${isListening?'var(--red)':'var(--border)'}`,color:isListening?'var(--red)':'var(--muted)'}}>{isListening?'⏹':'🎤'}</button>
             <button type="submit" className="btn btn-primary" disabled={!input.trim()||thinking||gameStatus==='paused'} style={{whiteSpace:'nowrap'}}>{thinking?'⏳':'→ Envoyer'}</button>
           </form>
           {gameStatus==='paused'&&<p style={{color:'var(--gold)',fontSize:'0.8rem',marginTop:'0.4rem',textAlign:'center'}}>⏸️ Partie en pause — le MJ doit la reprendre</p>}
