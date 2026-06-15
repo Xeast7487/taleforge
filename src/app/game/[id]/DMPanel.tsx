@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { TfGame, TfUser, TfCharacter, TfMessage, TfItem, TfCharacterItem, GameStatus, ItemRarity } from '@/lib/types'
 import { RARITY_COLORS, BONUS_LABELS, xpForNextLevel, calcLevel } from '@/lib/types'
+import CharacterSheetModal from './CharacterSheetModal'
 
 interface Props {
   game: TfGame & { host?: { username: string } }
@@ -17,10 +18,12 @@ interface PlayerInfo {
   character: (TfCharacter & { items: (TfCharacterItem & { item: TfItem })[] }) | null
 }
 
+interface NPC { id: string; name: string; hp: number; maxHp: number; ac: number }
+
 type DMMode = 'narration' | 'chat' | 'npc' | 'dice'
 type DiceT = 'd4' | 'd6' | 'd8' | 'd10' | 'd12' | 'd20'
 
-// ── Rewards panel (inline) ──────────────────────────────────────
+// ── Rewards panel ──────────────────────────────────────────────
 function RewardsPanel({ gameId, onClose }: { gameId: string; onClose: () => void }) {
   const supabase = createClient()
   const [tab, setTab] = useState<'xp' | 'item'>('xp')
@@ -133,7 +136,7 @@ function RewardsPanel({ gameId, onClose }: { gameId: string; onClose: () => void
 }
 
 // ── Player card (sidebar) ──────────────────────────────────────
-function PlayerCard({ player }: { player: PlayerInfo }) {
+function PlayerCard({ player, onViewSheet }: { player: PlayerInfo; onViewSheet: (c: TfCharacter & { items: (TfCharacterItem & { item: TfItem })[] }) => void }) {
   const char = player.character
   if (!char) return (
     <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)' }}>
@@ -145,7 +148,9 @@ function PlayerCard({ player }: { player: PlayerInfo }) {
   const equipped = char.items?.filter(i => i.equipped) || []
   return (
     <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ fontWeight: 'bold', color: 'var(--gold)', fontSize: '0.88rem' }}>{char.name}</div>
+      <button onClick={() => onViewSheet(char)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'block', width: '100%', textAlign: 'left' }}>
+        <div style={{ fontWeight: 'bold', color: 'var(--gold)', fontSize: '0.88rem', textDecoration: 'underline dotted', marginBottom: '0.15rem' }}>{char.name} 📋</div>
+      </button>
       <div style={{ color: 'var(--muted)', fontSize: '0.72rem', marginBottom: '0.35rem' }}>{char.race} {char.class} · Niv.{char.level} · @{player.user.username}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
         <span style={{ color: 'var(--red)', fontSize: '0.72rem' }}>❤️</span>
@@ -203,10 +208,13 @@ export default function DMPanel({ game, user, initialMessages }: Props) {
   const [dicePurpose, setDicePurpose] = useState('')
   const [diceTarget, setDiceTarget] = useState('all')
   const [notes, setNotes] = useState('')
-  const [showNotes, setShowNotes] = useState(false)
-  const [showRewards, setShowRewards] = useState(false)
+  const [rightPanel, setRightPanel] = useState<'notes' | 'npcs' | null>(null)
   const [showPlayers, setShowPlayers] = useState(true)
+  const [showRewards, setShowRewards] = useState(false)
   const [statusLoading, setStatusLoading] = useState(false)
+  const [npcs, setNpcs] = useState<NPC[]>([])
+  const [npcForm, setNpcForm] = useState({ name: '', hp: '20', ac: '10' })
+  const [sheetChar, setSheetChar] = useState<TfCharacter | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -281,12 +289,40 @@ export default function DMPanel({ game, user, initialMessages }: Props) {
     setStatusLoading(false)
   }
 
+  // NPC tracker functions
+  function addNpc() {
+    const hp = Math.max(1, parseInt(npcForm.hp) || 20)
+    if (!npcForm.name.trim()) return
+    setNpcs(p => [...p, { id: crypto.randomUUID(), name: npcForm.name.trim(), hp, maxHp: hp, ac: Math.max(1, parseInt(npcForm.ac) || 10) }])
+    setNpcForm({ name: '', hp: '20', ac: '10' })
+  }
+
+  function npcDamage(id: string, amt: number) {
+    setNpcs(p => p.map(n => n.id === id ? { ...n, hp: Math.max(0, n.hp - amt) } : n))
+  }
+
+  function npcHeal(id: string, amt: number) {
+    setNpcs(p => p.map(n => n.id === id ? { ...n, hp: Math.min(n.maxHp, n.hp + amt) } : n))
+  }
+
+  function removeNpc(id: string) {
+    setNpcs(p => p.filter(n => n.id !== id))
+  }
+
   const DICE: DiceT[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20']
   const statusColor: Record<string, string> = { waiting: 'var(--gold)', active: 'var(--green)', paused: 'var(--muted)', ended: 'var(--muted)' }
   const statusLabel: Record<string, string> = { waiting: '⏳ En attente', active: '⚔️ En cours', paused: '⏸️ En pause', ended: '✅ Terminée' }
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .dm-sidebar-left { display: none !important; }
+          .dm-sidebar-right { width: 100% !important; position: fixed !important; bottom: 0 !important; left: 0 !important; height: 55vh !important; zIndex: 50 !important; }
+          .dm-input-modes { flex-wrap: wrap !important; }
+        }
+      `}</style>
+
       {/* Nav */}
       <nav style={{ borderBottom: '1px solid var(--border)', padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'linear-gradient(135deg,#1a0a2e,#0d0718)', flexShrink: 0, flexWrap: 'wrap' }}>
         <Link href="/dashboard" style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>← Lobby</Link>
@@ -306,19 +342,20 @@ export default function DMPanel({ game, user, initialMessages }: Props) {
           </div>
         )}
         <div style={{ flex: 1 }} />
-        <button onClick={() => setShowNotes(!showNotes)} className="btn btn-ghost" style={{ padding: '0.25rem 0.6rem', fontSize: '0.8rem', borderColor: showNotes ? 'var(--accent)' : undefined, color: showNotes ? 'var(--accent)' : undefined }}>📝 Notes</button>
+        <button onClick={() => setRightPanel(rightPanel === 'npcs' ? null : 'npcs')} className="btn btn-ghost" style={{ padding: '0.25rem 0.6rem', fontSize: '0.8rem', borderColor: rightPanel === 'npcs' ? 'var(--gold)' : undefined, color: rightPanel === 'npcs' ? 'var(--gold)' : undefined }}>👹 PNJs ({npcs.length})</button>
+        <button onClick={() => setRightPanel(rightPanel === 'notes' ? null : 'notes')} className="btn btn-ghost" style={{ padding: '0.25rem 0.6rem', fontSize: '0.8rem', borderColor: rightPanel === 'notes' ? 'var(--accent)' : undefined, color: rightPanel === 'notes' ? 'var(--accent)' : undefined }}>📝 Notes</button>
         <button onClick={() => setShowPlayers(!showPlayers)} className="btn btn-ghost" style={{ padding: '0.25rem 0.6rem', fontSize: '0.8rem' }}>{showPlayers ? '◀' : '▶'} Joueurs</button>
       </nav>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Player sidebar */}
         {showPlayers && (
-          <div style={{ width: '230px', flexShrink: 0, borderRight: '1px solid var(--border)', background: 'rgba(10,10,20,0.7)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div className="dm-sidebar-left" style={{ width: '230px', flexShrink: 0, borderRight: '1px solid var(--border)', background: 'rgba(10,10,20,0.7)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid var(--border)', fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
               👥 Joueurs ({players.length})
             </div>
             {players.length === 0 && <div style={{ padding: '1rem', color: 'var(--muted)', fontSize: '0.8rem', textAlign: 'center', fontStyle: 'italic' }}>En attente...</div>}
-            {players.map(p => <PlayerCard key={p.user.id} player={p} />)}
+            {players.map(p => <PlayerCard key={p.user.id} player={p} onViewSheet={c => setSheetChar(c)} />)}
           </div>
         )}
 
@@ -338,16 +375,14 @@ export default function DMPanel({ game, user, initialMessages }: Props) {
           {/* DM input */}
           {gameStatus !== 'ended' ? (
             <div style={{ borderTop: '1px solid var(--border)', padding: '0.75rem 1rem', background: 'linear-gradient(180deg,rgba(26,10,46,0.97),rgba(10,10,15,0.99))', flexShrink: 0 }}>
-              <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+              <div className="dm-input-modes" style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
                 {([['narration', '📜 Narration'], ['chat', '💬 Chat'], ['npc', '🗣️ NPC'], ['dice', '🎲 Jet']] as [DMMode, string][]).map(([mode, label]) => (
                   <button key={mode} onClick={() => setMsgMode(mode)} className="btn" style={{ padding: '0.28rem 0.65rem', fontSize: '0.8rem', background: msgMode === mode ? 'var(--surface2)' : 'transparent', border: `1px solid ${msgMode === mode ? 'var(--accent)' : 'var(--border)'}`, color: msgMode === mode ? 'var(--accent)' : 'var(--muted)' }}>{label}</button>
                 ))}
               </div>
-
               {msgMode === 'npc' && (
                 <input className="input" value={npcName} onChange={e => setNpcName(e.target.value)} placeholder="Nom du PNJ..." style={{ marginBottom: '0.5rem', width: '200px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
               )}
-
               {msgMode !== 'dice' ? (
                 <form onSubmit={sendMessage} style={{ display: 'flex', gap: '0.5rem' }}>
                   <textarea className="input" value={input} onChange={e => setInput(e.target.value)}
@@ -374,7 +409,7 @@ export default function DMPanel({ game, user, initialMessages }: Props) {
                     </select>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input className="input" value={dicePurpose} onChange={e => setDicePurpose(e.target.value)} onKeyDown={e => e.key === 'Enter' && requestDice()} placeholder="Ex: Perception, Attaque d'épée, Sauvegarde de CON..." disabled={gameStatus === 'paused'} />
+                    <input className="input" value={dicePurpose} onChange={e => setDicePurpose(e.target.value)} onKeyDown={e => e.key === 'Enter' && requestDice()} placeholder="Ex: Perception, Attaque d'épée..." disabled={gameStatus === 'paused'} />
                     <button onClick={requestDice} className="btn btn-gold" disabled={!dicePurpose.trim() || gameStatus === 'paused'} style={{ whiteSpace: 'nowrap' }}>🎲 Demander</button>
                   </div>
                 </div>
@@ -388,16 +423,73 @@ export default function DMPanel({ game, user, initialMessages }: Props) {
           )}
         </div>
 
-        {/* Notes panel */}
-        {showNotes && (
-          <div style={{ width: '220px', flexShrink: 0, borderLeft: '1px solid var(--border)', background: 'rgba(10,10,20,0.7)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid var(--border)', fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              📝 Notes MJ (privé)
+        {/* Right panel — Notes or NPC tracker */}
+        {rightPanel !== null && (
+          <div className="dm-sidebar-right" style={{ width: '250px', flexShrink: 0, borderLeft: '1px solid var(--border)', background: 'rgba(10,10,20,0.85)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid var(--border)', fontSize: '0.72rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => setRightPanel('notes')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: rightPanel === 'notes' ? 'var(--accent)' : 'var(--muted)', padding: 0, fontSize: '0.72rem', fontWeight: 'bold' }}>📝 Notes</button>
+              <span style={{ color: 'var(--border)' }}>|</span>
+              <button onClick={() => setRightPanel('npcs')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: rightPanel === 'npcs' ? 'var(--gold)' : 'var(--muted)', padding: 0, fontSize: '0.72rem', fontWeight: 'bold' }}>👹 PNJs</button>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setRightPanel(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '0.8rem' }}>✕</button>
             </div>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)}
-              placeholder="Notes visibles uniquement par vous..."
-              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', padding: '0.75rem', color: 'var(--text)', fontSize: '0.83rem', resize: 'none', lineHeight: 1.6 }}
-            />
+
+            {rightPanel === 'notes' && (
+              <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                placeholder="Notes visibles uniquement par vous..."
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', padding: '0.75rem', color: 'var(--text)', fontSize: '0.83rem', resize: 'none', lineHeight: 1.6 }}
+              />
+            )}
+
+            {rightPanel === 'npcs' && (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                {/* Add NPC form */}
+                <div style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <input className="input" value={npcForm.name} onChange={e => setNpcForm(f => ({ ...f, name: e.target.value }))} onKeyDown={e => e.key === 'Enter' && addNpc()} placeholder="Nom du PNJ..." style={{ padding: '0.3rem 0.5rem', fontSize: '0.82rem' }} />
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--muted)', marginBottom: '0.15rem' }}>PV max</div>
+                      <input type="number" className="input" value={npcForm.hp} onChange={e => setNpcForm(f => ({ ...f, hp: e.target.value }))} style={{ padding: '0.3rem 0.4rem', fontSize: '0.82rem', width: '100%' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--muted)', marginBottom: '0.15rem' }}>CA</div>
+                      <input type="number" className="input" value={npcForm.ac} onChange={e => setNpcForm(f => ({ ...f, ac: e.target.value }))} style={{ padding: '0.3rem 0.4rem', fontSize: '0.82rem', width: '100%' }} />
+                    </div>
+                  </div>
+                  <button onClick={addNpc} className="btn btn-gold" style={{ justifyContent: 'center', padding: '0.3rem', fontSize: '0.8rem' }}>+ Ajouter PNJ</button>
+                </div>
+                {/* NPC list */}
+                {npcs.length === 0 && <div style={{ padding: '1rem', color: 'var(--muted)', fontSize: '0.8rem', textAlign: 'center', fontStyle: 'italic' }}>Aucun PNJ actif</div>}
+                {npcs.map(npc => {
+                  const pct = Math.max(0, Math.min(100, (npc.hp / npc.maxHp) * 100))
+                  return (
+                    <div key={npc.id} style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <div>
+                          <span style={{ fontWeight: 'bold', color: npc.hp === 0 ? 'var(--muted)' : 'var(--text)', fontSize: '0.85rem', textDecoration: npc.hp === 0 ? 'line-through' : 'none' }}>{npc.name}</span>
+                          <span style={{ color: 'var(--muted)', fontSize: '0.7rem', marginLeft: '0.4rem' }}>CA {npc.ac}</span>
+                        </div>
+                        <button onClick={() => removeNpc(npc.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '0.75rem' }}>✕</button>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                        <div style={{ flex: 1, height: '4px', background: 'var(--surface2)', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: pct > 60 ? 'var(--green)' : pct > 30 ? 'var(--gold)' : 'var(--red)', transition: 'width 0.2s' }} />
+                        </div>
+                        <span style={{ color: 'var(--muted)', fontSize: '0.7rem', flexShrink: 0 }}>{npc.hp}/{npc.maxHp}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.3rem' }}>
+                        {[1, 5, 10].map(n => (
+                          <button key={n} onClick={() => npcDamage(npc.id, n)} className="btn btn-ghost" style={{ padding: '0.15rem 0.35rem', fontSize: '0.72rem', borderColor: 'var(--red)', color: 'var(--red)' }}>-{n}</button>
+                        ))}
+                        {[1, 5, 10].map(n => (
+                          <button key={n} onClick={() => npcHeal(npc.id, n)} className="btn btn-ghost" style={{ padding: '0.15rem 0.35rem', fontSize: '0.72rem', borderColor: 'var(--green)', color: 'var(--green)' }}>+{n}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -405,6 +497,8 @@ export default function DMPanel({ game, user, initialMessages }: Props) {
       <AnimatePresence>
         {showRewards && <RewardsPanel gameId={game.id} onClose={() => setShowRewards(false)} />}
       </AnimatePresence>
+
+      {sheetChar && <CharacterSheetModal character={sheetChar} onClose={() => setSheetChar(null)} />}
     </div>
   )
 }
