@@ -40,7 +40,12 @@ export default async function DashboardPage() {
     countMap[p.game_id] = (countMap[p.game_id] || 0) + 1
   })
 
-  const gamesWithCount = (games || []).map(g => ({ ...g, player_count: countMap[g.id] || 0 }))
+  // Strip password_hash from client data, expose only has_password boolean
+  const gamesWithCount = (games || []).map(({ password_hash, ...g }) => ({
+    ...g,
+    has_password: !!password_hash,
+    player_count: countMap[g.id] || 0,
+  }))
 
   return <DashboardClient user={profile} games={gamesWithCount} characters={characters || []} />
 }

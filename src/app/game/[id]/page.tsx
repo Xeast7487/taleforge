@@ -23,16 +23,22 @@ export default async function GamePage({ params }: Props) {
 
   const isHost = game.host_id === user.id
 
-  // Auto-join game
-  const { data: isPlayer } = await supabase.from('tf_game_players').select('*').eq('game_id', id).eq('user_id', user.id).single()
-  if (!isPlayer) await supabase.from('tf_game_players').insert({ game_id: id, user_id: user.id })
+  // Join logic: auto-join only if game has no password; otherwise redirect to dashboard
+  const { data: isPlayer } = await supabase.from('tf_game_players').select('game_id').eq('game_id', id).eq('user_id', user.id).single()
+  if (!isPlayer) {
+    if (game.password_hash) redirect('/dashboard')
+    await supabase.from('tf_game_players').insert({ game_id: id, user_id: user.id })
+  }
 
   const { data: messages } = await supabase.from('tf_messages').select('*, user:tf_users(username)').eq('game_id', id).order('created_at', { ascending: false }).limit(50)
   const initialMessages = (messages || []).reverse()
 
+  // Strip password_hash before passing to client components
+  const { password_hash: _ph, ...safeGame } = game
+
   // Human DM host gets the DM panel
   if (isHost && game.dm_type === 'human') {
-    return <DMPanel game={game} user={profile!} initialMessages={initialMessages} />
+    return <DMPanel game={safeGame} user={profile!} initialMessages={initialMessages} />
   }
 
   // Players (and AI DM host) get the regular game client
@@ -41,7 +47,7 @@ export default async function GamePage({ params }: Props) {
 
   return (
     <GameClient
-      game={game}
+      game={safeGame}
       user={profile!}
       character={character || anyCharacter || null}
       initialMessages={initialMessages}

@@ -22,10 +22,12 @@ export interface TfGame {
   map_state: { tiles: unknown[]; tokens: unknown[]; fog: boolean }
   ai_model: string
   dm_type: 'ai' | 'human'
+  password_hash?: string | null
   created_at: string
   updated_at: string
   host?: TfUser
   player_count?: number
+  has_password?: boolean
 }
 
 export interface TfCharacter {

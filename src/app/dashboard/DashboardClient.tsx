@@ -113,8 +113,13 @@ export default function DashboardClient({ user, games, characters }: Props) {
   const [creating, setCreating] = useState(false)
   const [newGameName, setNewGameName] = useState('')
   const [newGameDesc, setNewGameDesc] = useState('')
+  const [newGamePassword, setNewGamePassword] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [dmType, setDmType] = useState<'ai' | 'human'>('ai')
+  const [joinModal, setJoinModal] = useState<{ id: string; name: string } | null>(null)
+  const [joinPassword, setJoinPassword] = useState('')
+  const [joining, setJoining] = useState(false)
+  const [joinError, setJoinError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -129,22 +134,44 @@ export default function DashboardClient({ user, games, characters }: Props) {
     if (!newGameName.trim()) return
     setCreating(true)
 
-    const { data: game, error } = await supabase.from('tf_games').insert({
-      name: newGameName.trim(),
-      description: newGameDesc.trim() || null,
-      host_id: user.id,
-      status: 'waiting',
-      dm_type: dmType,
-    }).select().single()
+    const res = await fetch('/api/game', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newGameName.trim(),
+        description: newGameDesc.trim() || null,
+        dm_type: dmType,
+        password: newGamePassword.trim() || null,
+      }),
+    })
+    const data = await res.json()
 
-    if (error || !game) {
-      alert('Erreur: ' + (error?.message || 'inconnue'))
+    if (!res.ok || !data.id) {
+      alert('Erreur: ' + (data.error || 'inconnue'))
       setCreating(false)
       return
     }
 
-    await supabase.from('tf_game_players').insert({ game_id: game.id, user_id: user.id })
-    router.push(`/game/${game.id}`)
+    router.push(`/game/${data.id}`)
+  }
+
+  async function handleJoin(gameId: string, password?: string) {
+    setJoining(true)
+    setJoinError('')
+    const res = await fetch(`/api/game/${gameId}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: password || '' }),
+    })
+    const data = await res.json()
+    setJoining(false)
+    if (!res.ok) {
+      setJoinError(data.error || 'Erreur')
+      return
+    }
+    setJoinModal(null)
+    setJoinPassword('')
+    router.push(`/game/${gameId}`)
   }
 
   const statusLabel: Record<string, string> = {
@@ -226,6 +253,23 @@ export default function DashboardClient({ user, games, characters }: Props) {
                 <button type="button" onClick={() => setDmType('ai')} className="btn" style={{ padding: '0.3rem 0.75rem', fontSize: '0.82rem', background: dmType === 'ai' ? 'var(--surface2)' : 'transparent', border: `1px solid ${dmType === 'ai' ? 'var(--accent)' : 'var(--border)'}`, color: dmType === 'ai' ? 'var(--accent)' : 'var(--muted)' }}>🤖 Claude (IA)</button>
                 <button type="button" onClick={() => setDmType('human')} className="btn" style={{ padding: '0.3rem 0.75rem', fontSize: '0.82rem', background: dmType === 'human' ? 'var(--surface2)' : 'transparent', border: `1px solid ${dmType === 'human' ? '#a78bfa' : 'var(--border)'}`, color: dmType === 'human' ? '#a78bfa' : 'var(--muted)' }}>🎭 Humain</button>
               </div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="🔒 Mot de passe (optionnel — laissez vide pour une partie publique)"
+                  value={newGamePassword}
+                  onChange={e => setNewGamePassword(e.target.value)}
+                  style={{ paddingRight: newGamePassword ? '2.5rem' : undefined }}
+                />
+                {newGamePassword && (
+                  <button
+                    type="button"
+                    onClick={() => setNewGamePassword('')}
+                    style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '1rem', padding: '0.25rem' }}
+                  >✕</button>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button type="submit" className="btn btn-gold" disabled={creating}>
                   {creating ? '⏳ Création...' : '⚔️ Créer la partie'}
@@ -296,6 +340,7 @@ export default function DashboardClient({ user, games, characters }: Props) {
                       {statusLabel[game.status] || game.status}
                     </span>
                     {game.dm_type === 'human' && <span style={{ fontSize: '0.75rem', color: '#a78bfa', border: '1px solid #a78bfa', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>🎭 MJ Humain</span>}
+                    {game.has_password && <span style={{ fontSize: '0.75rem', color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>🔒 Privée</span>}
                   </div>
                   {game.description && <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{game.description}</p>}
                   <div style={{ color: 'var(--muted)', fontSize: '0.8rem', display: 'flex', gap: '1rem' }}>
@@ -303,14 +348,76 @@ export default function DashboardClient({ user, games, characters }: Props) {
                     {game.host && <span>🎭 MJ: {(game.host as { username?: string })?.username || 'Inconnu'}</span>}
                   </div>
                 </div>
-                <Link href={`/game/${game.id}`} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
-                  {game.host_id === user.id ? '🔧 Gérer' : '⚔️ Rejoindre'}
-                </Link>
+                {game.host_id === user.id ? (
+                  <Link href={`/game/${game.id}`} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
+                    🔧 Gérer
+                  </Link>
+                ) : game.has_password ? (
+                  <button
+                    onClick={() => { setJoinModal({ id: game.id, name: game.name }); setJoinPassword(''); setJoinError('') }}
+                    className="btn btn-primary"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    🔒 Rejoindre
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleJoin(game.id)}
+                    className="btn btn-primary"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    ⚔️ Rejoindre
+                  </button>
+                )}
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Join password modal */}
+      {joinModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="card"
+            style={{ padding: '2rem', width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔒</div>
+              <h3 style={{ color: 'var(--gold)', fontWeight: 'bold', marginBottom: '0.25rem' }}>Partie protégée</h3>
+              <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+                &ldquo;{joinModal.name}&rdquo; est verrouillée. Entrez le mot de passe pour rejoindre.
+              </p>
+            </div>
+            <form
+              onSubmit={e => { e.preventDefault(); handleJoin(joinModal.id, joinPassword) }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+            >
+              <input
+                className="input"
+                type="text"
+                placeholder="Mot de passe de la partie..."
+                value={joinPassword}
+                onChange={e => { setJoinPassword(e.target.value); setJoinError('') }}
+                autoFocus
+              />
+              {joinError && (
+                <p style={{ color: 'var(--red)', fontSize: '0.85rem', textAlign: 'center' }}>❌ {joinError}</p>
+              )}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button type="submit" className="btn btn-gold" disabled={joining || !joinPassword.trim()} style={{ flex: 1 }}>
+                  {joining ? '⏳...' : '⚔️ Rejoindre'}
+                </button>
+                <button type="button" onClick={() => setJoinModal(null)} className="btn btn-ghost">
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }
