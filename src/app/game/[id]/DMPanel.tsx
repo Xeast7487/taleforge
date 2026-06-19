@@ -180,7 +180,7 @@ function ChatMsg({ msg }: { msg: TfMessage & { user?: { username: string } } }) 
   if (msg.type === 'system') return <div className="msg-system" style={{ padding: '0.4rem', margin: '0.25rem 0', textAlign: 'center', color: 'var(--muted)', fontSize: '0.82rem' }}>— {msg.content} —</div>
   if (msg.type === 'dm') return (
     <div className="msg-dm fade-in" style={{ padding: '0.75rem 1rem', margin: '0.5rem 0' }}>
-      <div style={{ fontSize: '0.75rem', color: '#a78bfa', marginBottom: '0.4rem', fontWeight: 'bold' }}>🎭 {msg.user_id ? username : 'Maître du Jeu (IA)'}</div>
+      <div style={{ fontSize: '0.75rem', color: '#a78bfa', marginBottom: '0.4rem', fontWeight: 'bold' }}>🎭 {msg.user_id ? username : 'Aelindra'}</div>
       <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{msg.content}</div>
       <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.4rem', textAlign: 'right' }}>{time}</div>
     </div>

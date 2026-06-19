@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Taleforge — D&D avec IA',
+  title: 'Taleforge — D&D en ligne',
   description: 'Jeu de rôle multijoueur avec Claude comme Maître du Jeu',
   icons: { icon: '/favicon.ico' },
 }

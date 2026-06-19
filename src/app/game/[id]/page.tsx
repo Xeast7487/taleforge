@@ -41,7 +41,7 @@ export default async function GamePage({ params }: Props) {
     return <DMPanel game={safeGame} user={profile!} initialMessages={initialMessages} />
   }
 
-  // Players (and AI DM host) get the regular game client
+  // Players (and Aelindra host) get the regular game client
   const { data: character } = await supabase.from('tf_characters').select('*').eq('user_id', user.id).eq('game_id', id).single()
   const { data: anyCharacter } = character ? { data: null } : await supabase.from('tf_characters').select('*').eq('user_id', user.id).is('game_id', null).order('created_at', { ascending: false }).limit(1).single()
 

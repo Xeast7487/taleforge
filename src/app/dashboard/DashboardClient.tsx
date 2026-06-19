@@ -250,7 +250,7 @@ export default function DashboardClient({ user, games, characters }: Props) {
               />
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Maître du Jeu :</span>
-                <button type="button" onClick={() => setDmType('ai')} className="btn" style={{ padding: '0.3rem 0.75rem', fontSize: '0.82rem', background: dmType === 'ai' ? 'var(--surface2)' : 'transparent', border: `1px solid ${dmType === 'ai' ? 'var(--accent)' : 'var(--border)'}`, color: dmType === 'ai' ? 'var(--accent)' : 'var(--muted)' }}>🤖 Claude (IA)</button>
+                <button type="button" onClick={() => setDmType('ai')} className="btn" style={{ padding: '0.3rem 0.75rem', fontSize: '0.82rem', background: dmType === 'ai' ? 'var(--surface2)' : 'transparent', border: `1px solid ${dmType === 'ai' ? 'var(--accent)' : 'var(--border)'}`, color: dmType === 'ai' ? 'var(--accent)' : 'var(--muted)' }}>🤖 Aelindra</button>
                 <button type="button" onClick={() => setDmType('human')} className="btn" style={{ padding: '0.3rem 0.75rem', fontSize: '0.82rem', background: dmType === 'human' ? 'var(--surface2)' : 'transparent', border: `1px solid ${dmType === 'human' ? '#a78bfa' : 'var(--border)'}`, color: dmType === 'human' ? '#a78bfa' : 'var(--muted)' }}>🎭 Humain</button>
               </div>
               <div style={{ position: 'relative' }}>

@@ -66,7 +66,7 @@ function GamePreviewWindow() {
           ))}
         </div>
         <span style={{ color: 'var(--muted)', fontSize: '0.7rem', flex: 1 }}>
-          🏰 La Taverne du Corbeau · DM IA
+          🏰 La Taverne du Corbeau · Aelindra
         </span>
         <span style={{
           background: 'rgba(34,197,94,0.12)',
@@ -238,24 +238,24 @@ const FAQ_ITEMS = [
     a: "Oui, Taleforge est entièrement gratuit. Créez votre compte, forgez votre héros et lancez-vous dans l'aventure sans aucun abonnement ni carte bancaire.",
   },
   {
-    q: "Le DM IA comprend vraiment les règles D&D 5e ?",
+    q: "Aelindra comprend vraiment les règles D&D 5e ?",
     a: "Aelindra connaît les règles D&D 5e et les applique en jeu : jets de dés contextuels, modificateurs de statistiques, avantage/désavantage. Elle maintient aussi la cohérence narrative tout au long de l'aventure.",
   },
   {
     q: 'Combien de joueurs peuvent participer ?',
-    a: "Jusqu'à 10 aventuriers peuvent rejoindre la même partie en temps réel. Le DM IA comme le DM humain s'adaptent à la taille du groupe, de la session solo à la grande table.",
+    a: "Jusqu'à 10 aventuriers peuvent rejoindre la même partie en temps réel. Aelindra comme le DM humain s'adaptent à la taille du groupe, de la session solo à la grande table.",
   },
   {
     q: 'Faut-il connaître D&D pour jouer ?',
-    a: "Non. Le DM IA explique les règles en cours de jeu et gère tous les aspects techniques. Taleforge est une excellente porte d'entrée — les débutants y sont les bienvenus.",
+    a: "Non. Aelindra explique les règles en cours de jeu et gère tous les aspects techniques. Taleforge est une excellente porte d'entrée — les débutants y sont les bienvenus.",
   },
   {
     q: 'Comment fonctionne le mode DM Humain ?',
     a: "Un joueur prend le rôle de Maître du Jeu et accède à un panneau dédié : narration en parchemin doré, gestion des PNJ, jets de dés, distribution d'XP et d'objets magiques aux aventuriers.",
   },
   {
-    q: 'Puis-je jouer seul avec le DM IA ?',
-    a: "Absolument. Le DM IA est disponible 24h/24 et adapte l'histoire à un joueur solitaire comme à un groupe de six. Parfait pour explorer entre deux sessions avec vos amis.",
+    q: 'Puis-je jouer seul avec Aelindra ?',
+    a: "Absolument. Aelindra est disponible 24h/24 et adapte l'histoire à un joueur solitaire comme à un groupe de six. Parfait pour explorer entre deux sessions avec vos amis.",
   },
 ]
 
@@ -385,7 +385,7 @@ export default function Home() {
                 }}
               >
                 <span style={{ color: 'var(--accent)', fontSize: '0.78rem', fontWeight: 700 }}>
-                  ✦ DM IA · DM Humain · Temps réel
+                  ✦ Aelindra · DM Humain · Temps réel
                 </span>
               </motion.div>
 
@@ -421,7 +421,7 @@ export default function Home() {
                 }}
               >
                 D&D 5e multijoueur en ligne — guidé par{' '}
-                <strong style={{ color: 'var(--accent)' }}>Aelindra (IA)</strong> ou par un vrai{' '}
+                <strong style={{ color: 'var(--accent)' }}>Aelindra</strong> ou par un vrai{' '}
                 <strong style={{ color: 'var(--gold)' }}>Maître du Jeu humain</strong>.
                 Jusqu'à 10 aventuriers, zéro installation.
               </motion.p>
@@ -453,7 +453,7 @@ export default function Home() {
                 {[
                   { icon: '🆓', label: 'Gratuit' },
                   { icon: '⚡', label: 'Temps réel' },
-                  { icon: '🤖', label: 'Aelindra IA' },
+                  { icon: '🤖', label: 'Aelindra' },
                   { icon: '👥', label: "Jusqu'à 10 joueurs" },
                 ].map(b => (
                   <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--muted)', fontSize: '0.82rem' }}>
@@ -506,7 +506,7 @@ export default function Home() {
             alignItems: 'center',
           }}>
             {[
-              { icon: '🤖', label: 'Guidé par Aelindra · IA' },
+              { icon: '🤖', label: 'Guidé par Aelindra' },
               { icon: '🐉', label: 'Règles D&D 5e' },
               { icon: '🔒', label: 'Compte sécurisé' },
               { icon: '🆓', label: '100% gratuit' },
@@ -532,14 +532,14 @@ export default function Home() {
                   Deux façons de jouer, une seule plateforme
                 </h2>
                 <p style={{ color: 'var(--muted)', maxWidth: '560px', margin: '0 auto', lineHeight: 1.7, fontSize: '1rem' }}>
-                  IA disponible à toute heure ou ami humain au clavier — Taleforge supporte les deux modes sans compromis.
+                  Aelindra disponible à toute heure ou ami humain au clavier — Taleforge supporte les deux modes sans compromis.
                 </p>
               </div>
             </FadeIn>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem' }}>
 
-              {/* ── AI DM card ── */}
+              {/* ── Aelindra card ── */}
               <FadeIn delay={0.1}>
                 <motion.div
                   whileHover={{ y: -8 }}
@@ -573,7 +573,7 @@ export default function Home() {
                           padding: '0.2rem 0.6rem',
                           borderRadius: '4px',
                           marginBottom: '0.5rem',
-                        }}>Aelindra · IA</span>
+                        }}>Aelindra</span>
                         <h3 style={{ color: 'var(--text)', fontSize: '1.65rem', fontWeight: 700 }}>DM Artificiel</h3>
                       </div>
                     </div>
@@ -633,7 +633,7 @@ export default function Home() {
 
                   <div style={{ padding: '1.5rem 2rem 2rem' }}>
                     <Link href="/auth/register" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem' }}>
-                      Jouer avec le DM IA →
+                      Jouer avec Aelindra →
                     </Link>
                   </div>
                 </motion.div>
@@ -814,10 +814,10 @@ export default function Home() {
             </FadeIn>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
               {[
-                { icon: '🐣', title: 'Débutants D&D', desc: "Jamais joué ? Le DM IA explique les règles en cours de jeu. Parfait pour découvrir D&D sans intimidation." },
+                { icon: '🐣', title: 'Débutants D&D', desc: "Jamais joué ? Aelindra explique les règles en cours de jeu. Parfait pour découvrir D&D sans intimidation." },
                 { icon: '🧙', title: 'Vétérans', desc: "Connaissez vos règles ? Plongez directement dans des aventures complexes avec un DM qui les maîtrise aussi." },
-                { icon: '👨‍👩‍👧‍👦', title: "Groupes d'amis", desc: "L'un de vous DM, les autres jouent — ou laissez l'IA gérer pendant que tout le monde joue ensemble." },
-                { icon: '🌙', title: 'Joueurs solitaires', desc: "Le DM IA est disponible à minuit comme à midi. Jouez à votre rythme, seul ou avec votre groupe en ligne." },
+                { icon: '👨‍👩‍👧‍👦', title: "Groupes d'amis", desc: "L'un de vous DM, les autres jouent — ou laissez Aelindra gérer pendant que tout le monde joue ensemble." },
+                { icon: '🌙', title: 'Joueurs solitaires', desc: "Aelindra est disponible à minuit comme à midi. Jouez à votre rythme, seul ou avec votre groupe en ligne." },
               ].map((c, i) => (
                 <FadeIn key={c.title} delay={i * 0.09}>
                   <motion.div
@@ -865,7 +865,7 @@ export default function Home() {
                 {
                   num: '03', icon: '🎮',
                   title: 'Lancez ou rejoignez une partie',
-                  desc: "Créez une salle (DM IA ou DM humain), partagez le code, et l'aventure commence. Vos amis vous rejoignent en un clic.",
+                  desc: "Créez une salle (Aelindra ou DM humain), partagez le code, et l'aventure commence. Vos amis vous rejoignent en un clic.",
                   detail: "Jusqu'à 10 joueurs · Temps réel",
                 },
               ].map((step, i) => (
@@ -971,7 +971,7 @@ export default function Home() {
                 Votre légende commence ici
               </h2>
               <p style={{ color: 'var(--text)', opacity: 0.78, lineHeight: 1.7, maxWidth: '460px', margin: '0 auto 0.75rem', fontSize: '0.98rem' }}>
-                Choisissez le DM IA pour jouer maintenant, ou invitez vos amis pour une session avec un MJ humain. L'aventure vous attend.
+                Choisissez Aelindra pour jouer maintenant, ou invitez vos amis pour une session avec un MJ humain. L'aventure vous attend.
               </p>
               <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginBottom: '2.25rem' }}>
                 Gratuit · Sans installation · Prêt en 2 minutes
