@@ -2,10 +2,13 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import DashboardClient from './DashboardClient'
 
+const ADMIN_EMAIL = 'alexxx7784@gmail.com'
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
+  const isAdmin = user.email === ADMIN_EMAIL
 
   // Get or create user profile
   let { data: profile } = await supabase.from('tf_users').select('*').eq('id', user.id).single()
@@ -47,5 +50,5 @@ export default async function DashboardPage() {
     player_count: countMap[g.id] || 0,
   }))
 
-  return <DashboardClient user={profile} games={gamesWithCount} characters={characters || []} />
+  return <DashboardClient user={profile} games={gamesWithCount} characters={characters || []} isAdmin={isAdmin} />
 }

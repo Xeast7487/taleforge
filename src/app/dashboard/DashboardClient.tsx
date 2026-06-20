@@ -15,6 +15,7 @@ interface Props {
   user: TfUser
   games: (TfGame & { player_count: number })[]
   characters: CharacterWithItems[]
+  isAdmin?: boolean
 }
 
 const CLASS_ICONS: Record<string, string> = {
@@ -109,7 +110,7 @@ function CharacterCard({ char }: { char: CharacterWithItems }) {
   )
 }
 
-export default function DashboardClient({ user, games, characters }: Props) {
+export default function DashboardClient({ user, games, characters, isAdmin }: Props) {
   const [creating, setCreating] = useState(false)
   const [newGameName, setNewGameName] = useState('')
   const [newGameDesc, setNewGameDesc] = useState('')
@@ -197,6 +198,11 @@ export default function DashboardClient({ user, games, characters }: Props) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>⚔️ {user.username}</span>
+          {isAdmin && (
+            <Link href="/admin" className="btn btn-ghost" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem', color: 'var(--gold)', borderColor: 'var(--gold)' }}>
+              Admin
+            </Link>
+          )}
           <button onClick={logout} className="btn btn-ghost" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
             Déconnexion
           </button>
