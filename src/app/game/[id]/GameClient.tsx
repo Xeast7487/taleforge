@@ -28,13 +28,25 @@ function DiceButton({type,sides,color,onRoll}:{type:DiceType;sides:number;color:
   return <button onClick={roll} className={`dice-face ${rolling?'rolling':''}`} style={{width:'44px',height:'44px',background:color,color:'white',fontSize:'0.85rem',border:'none',boxShadow:rolling?`0 0 15px ${color}`:'none'}} title={`Lancer ${type}`}>{rolling?'⟳':type}</button>
 }
 
+function npcHue(name:string){let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))&0xffff;return h%360}
+
 function ChatMsg({msg,uid}:{msg:TfMessage&{user?:{username:string}};uid:string}) {
   const time=new Date(msg.created_at).toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'})
   const username=(msg.user as {username?:string}|null)?.username||'Joueur'
   if(msg.type==='system') return <div className="msg-system" style={{padding:'0.4rem',margin:'0.25rem 0'}}>— {msg.content} —</div>
   if(msg.type==='dm') return <div className="msg-dm fade-in" style={{padding:'0.75rem 1rem',margin:'0.5rem 0'}}><div style={{fontSize:'0.75rem',color:'#a78bfa',marginBottom:'0.4rem',fontWeight:'bold'}}>🎭 Maître du Jeu</div><div style={{whiteSpace:'pre-wrap',lineHeight:1.6}}>{msg.content}</div><div style={{fontSize:'0.7rem',color:'var(--muted)',marginTop:'0.4rem',textAlign:'right'}}>{time}</div></div>
-  if(msg.type==='roll') return <div className="msg-roll fade-in" style={{padding:'0.6rem 1rem',margin:'0.4rem 0'}}><span style={{color:'var(--gold)'}}>{msg.content}</span><span style={{color:'var(--muted)',fontSize:'0.75rem',marginLeft:'0.5rem'}}>{time}</span></div>
-  if(msg.type==='narration') return <div className="msg-narration fade-in" style={{padding:'0.75rem 1rem',margin:'0.5rem 0'}}><div style={{whiteSpace:'pre-wrap',lineHeight:1.6}}>{msg.content}</div><div style={{fontSize:'0.7rem',color:'var(--muted)',marginTop:'0.4rem',textAlign:'right'}}>{time}</div></div>
+  if(msg.type==='roll'){
+    const isCrit=msg.content.startsWith('⚡')
+    return <div className={`${isCrit?'msg-roll-crit':'msg-roll'} fade-in`} style={{padding:'0.6rem 1rem',margin:'0.4rem 0'}}><span style={{color:'var(--gold)',fontWeight:isCrit?'bold':undefined,fontSize:isCrit?'1rem':undefined}}>{msg.content}</span><span style={{color:'var(--muted)',fontSize:'0.75rem',marginLeft:'0.5rem'}}>{time}</span></div>
+  }
+  if(msg.type==='narration'){
+    const npcM=msg.content.match(/^\*\*(.+?)\*\* : ([\s\S]*)$/)
+    if(npcM){
+      const [,nName,nText]=npcM
+      return <div className="msg-narration fade-in" style={{padding:'0.75rem 1rem',margin:'0.5rem 0'}}><div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.4rem'}}><div className="npc-avatar" style={{background:`hsl(${npcHue(nName)},60%,38%)`}}>{nName[0].toUpperCase()}</div><span style={{fontSize:'0.75rem',color:'var(--gold)',fontWeight:'bold'}}>{nName}</span></div><div style={{whiteSpace:'pre-wrap',lineHeight:1.6,fontStyle:'italic'}}>{nText}</div><div style={{fontSize:'0.7rem',color:'var(--muted)',marginTop:'0.4rem',textAlign:'right'}}>{time}</div></div>
+    }
+    return <div className="msg-narration fade-in" style={{padding:'0.75rem 1rem',margin:'0.5rem 0'}}><div style={{whiteSpace:'pre-wrap',lineHeight:1.6}}>{msg.content}</div><div style={{fontSize:'0.7rem',color:'var(--muted)',marginTop:'0.4rem',textAlign:'right'}}>{time}</div></div>
+  }
   const isAction=msg.type==='action', isOwn=msg.user_id===uid
   return <div className={isAction?'msg-action fade-in':'fade-in'} style={{padding:'0.5rem 0.75rem',margin:'0.25rem 0',borderRadius:isAction?undefined:'8px',background:isAction?undefined:(isOwn?'rgba(124,58,237,0.15)':'var(--surface2)')}}><div style={{fontSize:'0.75rem',color:'var(--muted)',marginBottom:'0.2rem'}}>{isAction?'⚔️ ':''}<strong>{username}</strong>{isAction?' tente...':''}<span style={{marginLeft:'0.5rem'}}>{time}</span></div><div style={{whiteSpace:'pre-wrap'}}>{msg.content}</div></div>
 }
@@ -233,9 +245,11 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
   const [statusLoading,setStatusLoading]=useState(false)
   const [showRewards,setShowRewards]=useState(false)
   const [showSheet,setShowSheet]=useState(false)
+  const [showCrit,setShowCrit]=useState(false)
   const [dmHistory,setDmHistory]=useState<{role:'user'|'assistant';content:string}[]>([])
   const [pendingDice,setPendingDice]=useState<{purpose?:string;modifier?:number}|null>(null)
   const chatEndRef=useRef<HTMLDivElement>(null)
+  const critTimeoutRef=useRef<ReturnType<typeof setTimeout>|null>(null)
   const voiceEnabledRef=useRef(false)
   const recognitionRef=useRef<unknown>(null)
   const [voiceEnabled,setVoiceEnabled]=useState(false)
@@ -255,6 +269,11 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
         } else {
           setMessages(p=>[...p,m])
           if(m.type==='dm'&&voiceEnabledRef.current)speakDM(m.content)
+        }
+        if(m.type==='roll'&&m.content.startsWith('⚡')){
+          if(critTimeoutRef.current)clearTimeout(critTimeoutRef.current)
+          setShowCrit(true)
+          critTimeoutRef.current=setTimeout(()=>setShowCrit(false),3000)
         }
         if(m.type==='system'&&m.metadata?.dice_request){
           const req=m.metadata.dice_request as{dice:string,purpose:string,target_user_id:string|null}
@@ -330,7 +349,10 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
 
   async function rollDice(type:DiceType,result:number){
     const mod=pendingDice?.modifier||0,total=result+mod,purpose=pendingDice?.purpose
-    const rc=`🎲 ${user.username} lance ${type}: ${result}${mod?` + ${mod}`:''}= **${total}**${purpose?` (${purpose})`:''}`
+    const isCrit=type==='d20'&&result===20
+    const rc=isCrit
+      ?`⚡ COUP CRITIQUE ! 🎲 ${user.username} lance d20: 20 — Naturel 20 !${purpose?` (${purpose})`:''}`
+      :`🎲 ${user.username} lance ${type}: ${result}${mod?` + ${mod}`:''}= **${total}**${purpose?` (${purpose})`:''}`
     await supabase.from('tf_messages').insert({game_id:game.id,user_id:user.id,type:'roll',content:rc})
     await supabase.from('tf_dice_rolls').insert({game_id:game.id,user_id:user.id,character_id:character?.id||null,dice_type:type,dice_count:1,results:[result],modifier:mod,total,purpose:purpose||null})
     setPendingDice(null)
@@ -430,7 +452,10 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
             <div style={{flex:1}}/>
             <span style={{color:'var(--muted)',fontSize:'0.75rem'}}>Dés libres:</span>
             {DICE.map(d=><DiceButton key={d.type} {...d} onRoll={async(type,result)=>{
-              const c=`🎲 ${user.username} lance ${type}: **${result}**`
+              const isCrit=type==='d20'&&result===20
+              const c=isCrit
+                ?`⚡ COUP CRITIQUE ! 🎲 ${user.username} lance d20: 20 — Naturel 20 !`
+                :`🎲 ${user.username} lance ${type}: **${result}**`
               await supabase.from('tf_messages').insert({game_id:game.id,user_id:user.id,type:'roll',content:c})
               await supabase.from('tf_dice_rolls').insert({game_id:game.id,user_id:user.id,character_id:character?.id||null,dice_type:type,dice_count:1,results:[result],modifier:0,total:result})
             }}/>)}
@@ -451,6 +476,25 @@ export default function GameClient({game,user,character,initialMessages,isHost}:
       )}
 
       {showSheet&&character&&<CharacterSheetModal character={character} onClose={()=>setShowSheet(false)}/>}
+
+      <AnimatePresence>
+        {showCrit&&(
+          <motion.div
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.4}}
+            style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',background:'radial-gradient(ellipse at center, rgba(245,158,11,0.18) 0%, transparent 70%)'}}
+          >
+            <motion.div
+              initial={{scale:0.5,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:1.2,opacity:0}}
+              transition={{type:'spring',stiffness:300,damping:20}}
+              style={{textAlign:'center',textShadow:'0 0 40px rgba(245,158,11,0.9)'}}
+            >
+              <div style={{fontSize:'4rem',lineHeight:1}}>⚡</div>
+              <div style={{fontSize:'2rem',fontWeight:'bold',color:'#fbbf24',letterSpacing:'0.1em',margin:'0.3rem 0'}}>COUP CRITIQUE !</div>
+              <div style={{fontSize:'1.1rem',color:'#f59e0b'}}>Naturel 20 !</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showRewards&&(

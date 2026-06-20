@@ -174,6 +174,8 @@ function PlayerCard({ player, onViewSheet }: { player: PlayerInfo; onViewSheet: 
 }
 
 // ── Chat message ───────────────────────────────────────────────
+function npcHue(name: string) { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff; return h % 360 }
+
 function ChatMsg({ msg }: { msg: TfMessage & { user?: { username: string } } }) {
   const time = new Date(msg.created_at).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
   const username = (msg.user as { username?: string } | null)?.username || 'Joueur'
@@ -185,8 +187,27 @@ function ChatMsg({ msg }: { msg: TfMessage & { user?: { username: string } } }) 
       <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.4rem', textAlign: 'right' }}>{time}</div>
     </div>
   )
-  if (msg.type === 'roll') return <div className="msg-roll fade-in" style={{ padding: '0.6rem 1rem', margin: '0.4rem 0' }}><span style={{ color: 'var(--gold)' }}>{msg.content}</span><span style={{ color: 'var(--muted)', fontSize: '0.75rem', marginLeft: '0.5rem' }}>{time}</span></div>
-  if (msg.type === 'narration') return <div className="msg-narration fade-in" style={{ padding: '0.75rem 1rem', margin: '0.5rem 0' }}><div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontStyle: 'italic' }}>{msg.content}</div><div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.4rem', textAlign: 'right' }}>{time}</div></div>
+  if (msg.type === 'roll') {
+    const isCrit = msg.content.startsWith('⚡')
+    return <div className={`${isCrit ? 'msg-roll-crit' : 'msg-roll'} fade-in`} style={{ padding: '0.6rem 1rem', margin: '0.4rem 0' }}><span style={{ color: 'var(--gold)', fontWeight: isCrit ? 'bold' : undefined, fontSize: isCrit ? '1rem' : undefined }}>{msg.content}</span><span style={{ color: 'var(--muted)', fontSize: '0.75rem', marginLeft: '0.5rem' }}>{time}</span></div>
+  }
+  if (msg.type === 'narration') {
+    const npcM = msg.content.match(/^\*\*(.+?)\*\* : ([\s\S]*)$/)
+    if (npcM) {
+      const [, nName, nText] = npcM
+      return (
+        <div className="msg-narration fade-in" style={{ padding: '0.75rem 1rem', margin: '0.5rem 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+            <div className="npc-avatar" style={{ background: `hsl(${npcHue(nName)},60%,38%)` }}>{nName[0].toUpperCase()}</div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 'bold' }}>{nName}</span>
+          </div>
+          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontStyle: 'italic' }}>{nText}</div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.4rem', textAlign: 'right' }}>{time}</div>
+        </div>
+      )
+    }
+    return <div className="msg-narration fade-in" style={{ padding: '0.75rem 1rem', margin: '0.5rem 0' }}><div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontStyle: 'italic' }}>{msg.content}</div><div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.4rem', textAlign: 'right' }}>{time}</div></div>
+  }
   const isAction = msg.type === 'action'
   return (
     <div className={isAction ? 'msg-action fade-in' : 'fade-in'} style={{ padding: '0.5rem 0.75rem', margin: '0.25rem 0', borderRadius: '8px', background: 'var(--surface2)' }}>

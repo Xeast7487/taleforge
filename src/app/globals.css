@@ -107,6 +107,26 @@ html, body {
   border-radius: 8px;
   text-align: center;
 }
+.msg-roll-crit {
+  background: linear-gradient(135deg, #2a1800, #3d2400);
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 0 0 25px var(--gold-glow), inset 0 0 15px rgba(245,158,11,0.08);
+  text-align: center;
+}
+.npc-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.2);
+}
 
 /* HP Bar */
 .hp-bar {
